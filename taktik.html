@@ -502,39 +502,41 @@ document.querySelectorAll('.modal-bg').forEach(m=>{
 
 // ── SHARE VIA URL ──────────────────────────────────────────────
 function serializeTactic(){
-  const name=document.getElementById('tactic-name').value.trim()||'Namnlös taktik';
-  return btoa(unescape(encodeURIComponent(JSON.stringify({name,players,arrows,steps}))));
+  const name=document.getElementById('tactic-name').value.trim()||'Nämnlös taktik';
+  const json=JSON.stringify({name,players,arrows,steps});
+  // Use TextEncoder for proper UTF-8 base64
+  const bytes=new TextEncoder().encode(json);
+  let bin='';
+  bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin);
+}
+function deserializeTactic(encoded){
+  const bin=atob(encoded);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 async function openShareModal(){
-  const encoded=serializeTactic();
-  const longUrl=window.location.href.split('?')[0]+'?t='+encoded;
   const box=document.getElementById('share-url-box');
   const fb=document.getElementById('copy-feedback');
   box.textContent='Förkortar länk…';
   fb.textContent='';
   openModal('modal-share');
 
-  const name=document.getElementById('tactic-name').value.trim()||'taktik';
-  const alias=name.toLowerCase()
-    .replace(/å/g,'a').replace(/ä/g,'a').replace(/ö/g,'o')
-    .replace(/[^a-z0-9]/g,'').slice(0,20);
+  const encoded=serializeTactic();
+  // Use hash (#) instead of query param — works better with GitHub Pages
+  const base=window.location.href.split('?')[0].split('#')[0];
+  const longUrl=base+'#t='+encoded;
 
-  async function tryShorten(useAlias){
-    const base='https://is.gd/create.php?format=simple&url='+encodeURIComponent(longUrl);
-    const apiUrl=useAlias&&alias?base+'&shorturl='+alias:base;
-    const resp=await fetch(apiUrl);
-    if(!resp.ok)throw new Error('HTTP '+resp.status);
-    const text=await resp.text();
-    if(!text.startsWith('http'))throw new Error(text);
-    return text.trim();
-  }
-
+  // Try TinyURL API (no CORS issues)
   try{
-    let short;
-    try{ short=await tryShorten(true); }
-    catch(e){ short=await tryShorten(false); }
-    box.textContent=short;
-  } catch(e){
+    const resp=await fetch('https://tinyurl.com/api-create.php?url='+encodeURIComponent(longUrl));
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const short=await resp.text();
+    if(short.startsWith('http')){box.textContent=short.trim();return;}
+    throw new Error('bad response');
+  }catch(e){
+    // Fallback: show long url
     box.textContent=longUrl;
     fb.textContent='(Kunde inte förkorta — kopiera hela länken)';
   }
@@ -555,14 +557,16 @@ function fallbackCopy(text,fb){
   document.body.removeChild(ta);
 }
 function loadFromUrl(){
-  const t=new URLSearchParams(window.location.search).get('t');
-  if(!t)return false;
+  // Read from hash (#t=...) 
+  const hash=window.location.hash;
+  if(!hash.startsWith('#t='))return false;
   try{
-    const d=JSON.parse(decodeURIComponent(escape(atob(t))));
+    const encoded=hash.slice(3);
+    const d=deserializeTactic(encoded);
     players=d.players||[];arrows=d.arrows||[];steps=d.steps||[];currentStep=null;
     document.getElementById('tactic-name').value=d.name||'';
     render();renderSteps();return true;
-  }catch(e){return false;}
+  }catch(e){console.error('loadFromUrl error',e);return false;}
 }
 
 // ── STEPS ──────────────────────────────────────────────────────
