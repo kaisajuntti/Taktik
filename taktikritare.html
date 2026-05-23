@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Taktikritare</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap');
+  :root{--bg:#0a1628;--panel:#0f2240;--border:#1a3a5c;--accent:#7ec8e3;--dim:#556688;--text:#c8d8f0;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;height:100%;overflow:hidden;}
+  #app{display:flex;flex-direction:column;height:100vh;width:100vw;}
+
+  #topbar{display:flex;align-items:center;gap:6px;padding:6px 10px;
+    background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;}
+  #topbar h1{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:3px;color:var(--accent);white-space:nowrap;}
+  #tactic-name{background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);
+    font-size:0.78rem;font-family:'DM Sans',sans-serif;padding:3px 5px;width:120px;outline:none;flex-shrink:0;}
+  #tactic-name:focus{border-color:var(--accent);}
+  .top-btn{background:#1a3a5c;color:var(--accent);border:1.5px solid var(--border);
+    border-radius:5px;padding:5px 9px;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;
+    letter-spacing:1px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+  .top-btn:active{background:#2a5a8c;}
+  #share-btn{background:#1a4a2e;color:#7be0a0;border-color:#2a6a3e;}
+  #share-btn:active{background:#2a6a3e;}
+
+  #toolbar{display:flex;flex-wrap:wrap;gap:4px;padding:5px 8px;
+    background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center;}
+  .tb{background:#0a1e38;color:var(--dim);border:1.5px solid var(--border);border-radius:5px;
+    padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;
+    cursor:pointer;white-space:nowrap;transition:all 0.15s;user-select:none;}
+  .tb.on{background:#1a3a6c;color:#fff;border-color:var(--accent);}
+  .tb.red.on{background:#4a1a1a;color:#ff6b6b;border-color:#ff6b6b;}
+  .tb-sep{width:1px;height:20px;background:var(--border);margin:0 2px;}
+
+  #arrowopts{display:none;flex-wrap:wrap;gap:5px;padding:4px 8px;
+    background:#08192e;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0;}
+  #arrowopts.show{display:flex;}
+  .sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
+  .sw.on{border-color:#fff;}
+  .sm{background:#0a1e38;color:var(--dim);border:1px solid var(--border);border-radius:4px;
+    padding:3px 8px;font-size:0.68rem;font-weight:600;cursor:pointer;}
+  .sm.on{background:#1a3a6c;color:#fff;border-color:var(--accent);}
+
+  #hint{padding:2px 8px;font-size:0.65rem;color:#334466;background:var(--bg);flex-shrink:0;text-align:center;min-height:16px;}
+
+  #main{display:flex;flex:1;overflow:hidden;}
+  #field-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:3px;}
+  #pitch{max-width:100%;max-height:100%;display:block;touch-action:none;}
+
+  #right{width:210px;background:var(--panel);border-left:1px solid var(--border);
+    display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+  #tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--border);}
+  .tab{flex:1;padding:7px 2px;font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:1px;
+    color:var(--dim);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+  .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+
+  #steps-pane,#library-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  #steps-pane.hidden,#library-pane.hidden{display:none;}
+
+  #steps-list{flex:1;overflow-y:auto;padding:5px 6px;display:flex;flex-direction:column;gap:4px;}
+  .step-card{background:#0a1e38;border:1.5px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;transition:border 0.15s;}
+  .step-card.on{border-color:var(--accent);background:#0f2a48;}
+  .step-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+  .step-num{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:var(--accent);letter-spacing:1px;}
+  .step-actions{display:flex;gap:3px;}
+  .step-act{background:none;border:none;font-size:0.75rem;cursor:pointer;padding:0 2px;line-height:1;}
+  .step-desc-input{width:100%;background:#0a1628;border:1px solid var(--border);border-radius:4px;
+    color:var(--text);font-size:0.67rem;padding:3px 5px;resize:none;font-family:'DM Sans',sans-serif;line-height:1.4;}
+  .step-desc-input:focus{outline:none;border-color:var(--accent);}
+  #steps-footer{padding:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+  .foot-row{display:flex;gap:4px;}
+  .foot-btn{flex:1;padding:6px 4px;background:#0a1e38;color:var(--dim);border:1px solid var(--border);
+    border-radius:5px;font-size:0.67rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .foot-btn.accent{background:#1a3a6c;color:var(--accent);border-color:var(--accent);}
+  .foot-btn.yellow{background:#3a3000;color:#f5c542;border-color:#f5c542;}
+  .foot-btn.playing{background:#1a4a2e;color:#7be0a0;border-color:#7be0a0;}
+
+  #lib-list{flex:1;overflow-y:auto;padding:5px 6px;display:flex;flex-direction:column;gap:4px;}
+  .lib-card{background:#0a1e38;border:1.5px solid var(--border);border-radius:6px;padding:7px 9px;
+    display:flex;align-items:center;justify-content:space-between;gap:5px;}
+  .lib-name{font-size:0.75rem;font-weight:600;color:var(--text);cursor:pointer;flex:1;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lib-actions{display:flex;gap:3px;flex-shrink:0;}
+  .lib-btn{background:none;border:none;font-size:0.75rem;cursor:pointer;padding:0 2px;}
+  #lib-footer{padding:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+  #save-lib-btn{width:100%;padding:7px;background:#1a3a6c;color:var(--accent);border:1.5px solid var(--accent);
+    border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:2px;cursor:pointer;}
+  .lib-io-row{display:flex;gap:4px;}
+  .lib-io-btn{flex:1;padding:6px 4px;border:1px solid var(--border);border-radius:5px;
+    font-size:0.67rem;font-weight:600;cursor:pointer;white-space:nowrap;text-align:center;}
+  #export-btn{background:#0a2a1a;color:#7be0a0;border-color:#2a6a3e;}
+  #export-btn:active{background:#1a4a2e;}
+  #import-btn{background:#0a1e38;color:var(--dim);border-color:var(--border);}
+  #import-btn:active{background:#1a3a5c;}
+  #import-file{display:none;}
+
+  #steps-list::-webkit-scrollbar,#lib-list::-webkit-scrollbar{width:3px;}
+  #steps-list::-webkit-scrollbar-thumb,#lib-list::-webkit-scrollbar-thumb{background:#1a3a5c;border-radius:2px;}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);
+    align-items:center;justify-content:center;z-index:200;}
+  .modal-bg.show{display:flex;}
+  .modal-box{background:var(--panel);border:2px solid var(--border);border-radius:10px;
+    padding:20px 22px;display:flex;flex-direction:column;gap:12px;min-width:240px;max-width:340px;width:92%;}
+  .modal-box h3{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--accent);letter-spacing:2px;}
+  .modal-box p{font-size:0.78rem;color:var(--dim);line-height:1.5;}
+  .modal-box input{background:#1a3a5c;border:1.5px solid var(--border);border-radius:5px;color:#fff;
+    padding:8px 10px;font-size:0.88rem;font-weight:600;outline:none;font-family:'DM Sans',sans-serif;width:100%;}
+  .modal-box input:focus{border-color:var(--accent);}
+  #share-url-box{background:#0a1628;border:1px solid var(--border);border-radius:5px;
+    color:var(--accent);font-size:0.68rem;padding:8px 10px;word-break:break-all;line-height:1.5;
+    user-select:all;cursor:text;max-height:80px;overflow-y:auto;}
+  .modal-btns{display:flex;gap:9px;}
+  .modal-btns button{flex:1;padding:9px;border:none;border-radius:5px;font-weight:600;cursor:pointer;font-size:0.82rem;}
+  .modal-ok{background:#2a5a8c;color:#fff;}
+  .modal-cancel{background:#1a2e4a;color:var(--dim);}
+  .modal-green{background:#1a4a2e;color:#7be0a0;}
+  .feedback{font-size:0.72rem;text-align:center;min-height:16px;color:#7be0a0;}
+
+  @media(max-width:600px){#right{width:155px;}.step-desc-input{font-size:0.62rem;}.lib-name{font-size:0.68rem;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <h1>⚽ TAKTIK</h1>
+    <input id="tactic-name" placeholder="Namnlös taktik" maxlength="30"/>
+    <button class="top-btn" id="share-btn" onclick="openShareModal()">📤 Dela</button>
+    <button class="top-btn" onclick="resetBoard()">↺</button>
+    <span style="font-size:0.55rem;color:#223344;margin-left:auto;">v1.0.0</span>
+  </div>
+
+  <div id="toolbar">
+    <button class="tb on" id="btn-drag" onclick="setMode('drag')">✋ Flytta</button>
+    <button class="tb" id="btn-pass"    onclick="setMode('pass')">→ Pass</button>
+    <button class="tb" id="btn-run"     onclick="setMode('run')">⤳ Löpning</button>
+    <button class="tb" id="btn-addp"    onclick="setMode('addPlayer')">+ SP</button>
+    <button class="tb" id="btn-addm"    onclick="setMode('addOpp')">+ MOT</button>
+    <button class="tb red" id="btn-del" onclick="setMode('delete')">🗑</button>
+    <div class="tb-sep"></div>
+    <button class="tb" onclick="clearArrows()">Rensa pilar</button>
+  </div>
+
+  <div id="arrowopts">
+    <span style="font-size:0.65rem;color:var(--dim);">Färg:</span>
+    <div class="sw on" style="background:#7ec8e3" data-c="#7ec8e3" onclick="pickColor(this)"></div>
+    <div class="sw" style="background:#f5c542"  data-c="#f5c542"  onclick="pickColor(this)"></div>
+    <div class="sw" style="background:#7be0a0"  data-c="#7be0a0"  onclick="pickColor(this)"></div>
+    <div class="sw" style="background:#ff9f4a"  data-c="#ff9f4a"  onclick="pickColor(this)"></div>
+    <div class="sw" style="background:#ff7eb3"  data-c="#ff7eb3"  onclick="pickColor(this)"></div>
+    <div class="sw" style="background:#c084fc"  data-c="#c084fc"  onclick="pickColor(this)"></div>
+    <div class="tb-sep"></div>
+    <button class="sm on" id="w-thin"  onclick="pickWidth(2,this)">Tunn</button>
+    <button class="sm"    id="w-thick" onclick="pickWidth(3.5,this)">Tjock</button>
+  </div>
+
+  <div id="hint"></div>
+
+  <div id="main">
+    <div id="field-wrap">
+      <svg id="pitch" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div id="right">
+      <div id="tabs">
+        <div class="tab on" id="tab-steps"   onclick="switchTab('steps')">STEG</div>
+        <div class="tab"    id="tab-library" onclick="switchTab('library')">MINA</div>
+      </div>
+
+      <div id="steps-pane">
+        <div id="steps-list"></div>
+        <div id="steps-footer">
+          <div class="foot-row">
+            <button class="foot-btn accent" onclick="saveStep()">+ Nytt steg</button>
+            <button class="foot-btn yellow" id="update-btn" onclick="updateCurrentStep()" style="display:none">↺ Uppdatera</button>
+          </div>
+          <div class="foot-row">
+            <button class="foot-btn" id="play-btn" onclick="togglePlay()">▶ Spela</button>
+            <button class="foot-btn" onclick="gotoPrev()">◀</button>
+            <button class="foot-btn" onclick="gotoNext()">▶</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="library-pane" class="hidden">
+        <div id="lib-list"></div>
+        <div id="lib-footer">
+          <button id="save-lib-btn" onclick="openSaveLibModal()">+ SPARA TAKTIK</button>
+          <div class="lib-io-row">
+            <button class="lib-io-btn" id="export-btn" onclick="exportLibrary()">💾 Exportera</button>
+            <label class="lib-io-btn" id="import-btn">
+              📥 Importera
+              <input type="file" id="import-file" accept=".json" onchange="importLibrary(event)"/>
+            </label>
+          </div>
+          <div class="feedback" id="io-feedback"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="modal-bg" id="modal-player">
+  <div class="modal-box">
+    <h3>Byt namn</h3>
+    <input id="player-input" maxlength="4"/>
+    <div class="modal-btns">
+      <button class="modal-ok" onclick="commitLabel()">OK</button>
+      <button class="modal-cancel" onclick="closeModal('modal-player')">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE LIB MODAL -->
+<div class="modal-bg" id="modal-lib">
+  <div class="modal-box">
+    <h3>Spara taktik</h3>
+    <input id="lib-input" placeholder="t.ex. Uppspel 1" maxlength="30"/>
+    <div class="modal-btns">
+      <button class="modal-ok" onclick="commitSaveLib()">Spara</button>
+      <button class="modal-cancel" onclick="closeModal('modal-lib')">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-bg" id="modal-share">
+  <div class="modal-box">
+    <h3>📤 Dela taktik</h3>
+    <p>Kopiera länken och skicka till vem du vill. De öppnar den i valfri webbläsare.</p>
+    <div id="share-url-box">Genererar…</div>
+    <div class="modal-btns">
+      <button class="modal-green" onclick="copyShareUrl()">Kopiera länk</button>
+      <button class="modal-cancel" onclick="closeModal('modal-share')">Stäng</button>
+    </div>
+    <div class="feedback" id="copy-feedback"></div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal-box">
+    <h3 id="confirm-title">Är du säker?</h3>
+    <p id="confirm-msg"></p>
+    <div class="modal-btns">
+      <button class="modal-ok" id="confirm-ok">Ja</button>
+      <button class="modal-cancel" onclick="closeModal('modal-confirm')">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FW=500,FH=700,NS='http://www.w3.org/2000/svg';
+let players=[],arrows=[],steps=[],library=[];
+let mode='drag',arrowColor='#7ec8e3',arrowWidth=2;
+let selected=null,dragging=null,drawStart=null,drawPreview=null;
+let editingPlayerId=null,currentStep=null,playTimer=null,seq=100;
+
+const HINTS={
+  drag:'Dra spelare · Dubbelklicka för att byta namn',
+  pass:'Klicka och dra för att rita passningspil (fri)',
+  run: 'Klicka och dra för att rita löpningspil (streckad)',
+  addPlayer:'Klicka på planen för att placera spelare',
+  addOpp:   'Klicka på planen för att placera motståndare',
+  delete:   'Klicka på spelare eller pil för att radera',
+};
+
+const defaultPlayers=[
+  {id:'mv', label:'MV', x:250,y:648,team:true},
+  {id:'vmb',label:'VMB',x:148,y:558,team:true},
+  {id:'hmb',label:'HMB',x:352,y:558,team:true},
+  {id:'vyb',label:'VYB',x:58, y:542,team:true},
+  {id:'hyb',label:'HYB',x:442,y:542,team:true},
+  {id:'6',  label:'6',  x:250,y:448,team:true},
+  {id:'8v', label:'8V', x:148,y:412,team:true},
+  {id:'8h', label:'8H', x:352,y:412,team:true},
+  {id:'vya',label:'VYA',x:52, y:248,team:true},
+  {id:'hya',label:'HYA',x:448,y:248,team:true},
+  {id:'cf', label:'CF', x:250,y:210,team:true},
+];
+
+// ── SVG ────────────────────────────────────────────────────────
+const svg=document.getElementById('pitch');
+function mkEl(tag,attrs={},par=null){
+  const e=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);
+  if(par)par.appendChild(e);return e;
+}
+let arrowLayer,previewLayer,playerLayer;
+
+function buildField(){
+  for(let i=0;i<13;i++)mkEl('rect',{x:i*40,y:0,width:40,height:FH,fill:i%2===0?'#1a4a2e':'#1e5233'},svg);
+  const L='rgba(255,255,255,0.55)';
+  mkEl('rect',{x:20,y:20,width:FW-40,height:FH-40,fill:'none',stroke:L,'stroke-width':2},svg);
+  mkEl('line',{x1:20,y1:FH/2,x2:FW-20,y2:FH/2,stroke:L,'stroke-width':'1.5'},svg);
+  mkEl('circle',{cx:FW/2,cy:FH/2,r:62,fill:'none',stroke:L,'stroke-width':'1.5',opacity:'0.5'},svg);
+  mkEl('circle',{cx:FW/2,cy:FH/2,r:4,fill:L,opacity:'0.5'},svg);
+  mkEl('rect',{x:125,y:20,width:250,height:130,fill:'none',stroke:L,'stroke-width':'1.5'},svg);
+  mkEl('rect',{x:190,y:20,width:120,height:58,fill:'none',stroke:L,'stroke-width':'1.2',opacity:'0.7'},svg);
+  mkEl('circle',{cx:FW/2,cy:118,r:62,fill:'none',stroke:L,'stroke-width':'1',opacity:'0.3'},svg);
+  mkEl('rect',{x:188,y:12,width:124,height:16,fill:'none',stroke:L,'stroke-width':'2'},svg);
+  mkEl('rect',{x:125,y:FH-150,width:250,height:130,fill:'none',stroke:L,'stroke-width':'1.5'},svg);
+  mkEl('rect',{x:190,y:FH-78,width:120,height:58,fill:'none',stroke:L,'stroke-width':'1.2',opacity:'0.7'},svg);
+  mkEl('circle',{cx:FW/2,cy:FH-118,r:62,fill:'none',stroke:L,'stroke-width':'1',opacity:'0.3'},svg);
+  mkEl('rect',{x:188,y:FH-28,width:124,height:16,fill:'none',stroke:L,'stroke-width':'2'},svg);
+  arrowLayer=mkEl('g',{},svg);
+  previewLayer=mkEl('g',{},svg);
+  playerLayer=mkEl('g',{},svg);
+}
+
+function toSVG(cx,cy){
+  const r=svg.getBoundingClientRect(),sx=FW/r.width,sy=FH/r.height;
+  return{x:Math.max(0,Math.min(FW,(cx-r.left)*sx)),y:Math.max(0,Math.min(FH,(cy-r.top)*sy))};
+}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+// ── RENDER ─────────────────────────────────────────────────────
+function render(){
+  while(arrowLayer.firstChild)arrowLayer.removeChild(arrowLayer.firstChild);
+  while(playerLayer.firstChild)playerLayer.removeChild(playerLayer.firstChild);
+  const defs=mkEl('defs',{},arrowLayer);
+  [...new Set(arrows.map(a=>a.color))].forEach(c=>{
+    const m=mkEl('marker',{id:'m'+c.replace('#',''),markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},defs);
+    mkEl('polygon',{points:'0 0,8 4,0 8',fill:c},m);
+  });
+  arrows.forEach(a=>{
+    const isSel=selected?.type==='arrow'&&selected.id===a.id;
+    mkEl('line',{x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,stroke:a.color,
+      'stroke-width':isSel?a.w+1.5:a.w,'stroke-dasharray':a.t==='run'?'7,5':'none',
+      'marker-end':'url(#m'+a.color.replace('#','')+')',opacity:isSel?1:0.88},arrowLayer);
+    const hit=mkEl('line',{x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,stroke:'transparent','stroke-width':14,style:'cursor:pointer'},arrowLayer);
+    hit.addEventListener('click',e=>{e.stopPropagation();onArrowClick(a.id);});
+    hit.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();onArrowClick(a.id);},{passive:false});
+  });
+  players.forEach(p=>{
+    const c=p.team?'#7ec8e3':'#ff6b6b';
+    const isSel=selected?.type==='player'&&selected.id===p.id;
+    const g=mkEl('g',{transform:`translate(${p.x},${p.y})`,style:'cursor:grab;user-select:none'},playerLayer);
+    mkEl('circle',{r:17,fill:isSel?'#2a5a8c':'#1a2e4a',stroke:c,'stroke-width':isSel?3:2},g);
+    const t=mkEl('text',{'text-anchor':'middle','dominant-baseline':'central',
+      'font-size':p.label.length>3?'8':p.label.length>2?'9':'10',
+      'font-family':'DM Sans,sans-serif','font-weight':'600',fill:c,
+      style:'pointer-events:none;user-select:none'},g);
+    t.textContent=p.label;
+    g.addEventListener('mousedown',e=>{e.stopPropagation();onPlayerDown(e.clientX,e.clientY,p.id);});
+    g.addEventListener('touchstart',e=>{e.stopPropagation();const tt=e.touches[0];onPlayerDown(tt.clientX,tt.clientY,p.id);},{passive:false});
+    g.addEventListener('dblclick',e=>{e.stopPropagation();openPlayerModal(p.id);});
+    g.addEventListener('click',e=>{e.stopPropagation();onPlayerClick(p.id);});
+  });
+}
+
+// ── INTERACTION ────────────────────────────────────────────────
+function onPlayerDown(cx,cy,id){
+  if(mode==='drag'){dragging=id;selected={type:'player',id};render();}
+  else if(mode==='pass'||mode==='run'){const p=players.find(x=>x.id===id);if(p)startDraw(p.x,p.y);}
+}
+function onPlayerClick(id){
+  if(mode==='delete'){players=players.filter(p=>p.id!==id);arrows=arrows.filter(a=>a.fp!==id&&a.tp!==id);selected=null;render();}
+  else if(mode==='drag'){selected={type:'player',id};render();}
+}
+function onArrowClick(id){
+  if(mode==='delete'){arrows=arrows.filter(a=>a.id!==id);render();}
+  else{selected={type:'arrow',id};render();}
+}
+function startDraw(x,y){
+  drawStart={x,y};
+  while(previewLayer.firstChild)previewLayer.removeChild(previewLayer.firstChild);
+  const d=mkEl('defs',{},previewLayer);
+  const m=mkEl('marker',{id:'mprev',markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},d);
+  mkEl('polygon',{points:'0 0,8 4,0 8',fill:arrowColor},m);
+  drawPreview=mkEl('line',{x1:x,y1:y,x2:x,y2:y,stroke:arrowColor,'stroke-width':arrowWidth,
+    'stroke-dasharray':mode==='run'?'7,5':'none','marker-end':'url(#mprev)',opacity:'0.7'},previewLayer);
+}
+function moveDraw(cx,cy){
+  if(!drawStart||!drawPreview)return;
+  const c=toSVG(cx,cy);
+  drawPreview.setAttribute('x2',c.x);drawPreview.setAttribute('y2',c.y);
+}
+function endDraw(cx,cy){
+  if(!drawStart)return;
+  const c=toSVG(cx,cy);
+  if(Math.hypot(c.x-drawStart.x,c.y-drawStart.y)>10)
+    arrows.push({id:'a'+(seq++),x1:drawStart.x,y1:drawStart.y,x2:c.x,y2:c.y,color:arrowColor,w:arrowWidth,t:mode});
+  drawStart=null;drawPreview=null;
+  while(previewLayer.firstChild)previewLayer.removeChild(previewLayer.firstChild);
+  render();
+}
+
+svg.addEventListener('mousedown',e=>{if(mode==='pass'||mode==='run'){const c=toSVG(e.clientX,e.clientY);startDraw(c.x,c.y);}});
+svg.addEventListener('mousemove',e=>{
+  if(dragging){const c=toSVG(e.clientX,e.clientY);players=players.map(p=>p.id===dragging?{...p,x:clamp(c.x,18,FW-18),y:clamp(c.y,18,FH-18)}:p);render();}
+  else moveDraw(e.clientX,e.clientY);
+});
+svg.addEventListener('mouseup',e=>{endDraw(e.clientX,e.clientY);dragging=null;});
+svg.addEventListener('mouseleave',e=>{endDraw(e.clientX,e.clientY);dragging=null;});
+svg.addEventListener('touchstart',e=>{
+  if(mode==='pass'||mode==='run'){e.preventDefault();const t=e.touches[0],c=toSVG(t.clientX,t.clientY);startDraw(c.x,c.y);}
+},{passive:false});
+svg.addEventListener('touchmove',e=>{
+  e.preventDefault();const t=e.touches[0];
+  if(dragging){const c=toSVG(t.clientX,t.clientY);players=players.map(p=>p.id===dragging?{...p,x:clamp(c.x,18,FW-18),y:clamp(c.y,18,FH-18)}:p);render();}
+  else moveDraw(t.clientX,t.clientY);
+},{passive:false});
+svg.addEventListener('touchend',e=>{const t=e.changedTouches[0];endDraw(t.clientX,t.clientY);dragging=null;},{passive:false});
+svg.addEventListener('click',e=>{
+  if(mode==='addPlayer'){const c=toSVG(e.clientX,e.clientY);players.push({id:'p'+(seq++),label:'SP',x:c.x,y:c.y,team:true});setMode('drag');render();}
+  else if(mode==='addOpp'){const c=toSVG(e.clientX,e.clientY);players.push({id:'p'+(seq++),label:'MOT',x:c.x,y:c.y,team:false});setMode('drag');render();}
+  else if(mode==='drag'){selected=null;render();}
+});
+
+// ── MODE ───────────────────────────────────────────────────────
+const modeMap={drag:'btn-drag',pass:'btn-pass',run:'btn-run',addPlayer:'btn-addp',addOpp:'btn-addm',delete:'btn-del'};
+function setMode(m){
+  mode=m;drawStart=null;dragging=null;
+  while(previewLayer.firstChild)previewLayer.removeChild(previewLayer.firstChild);
+  Object.values(modeMap).forEach(id=>document.getElementById(id)?.classList.remove('on'));
+  document.getElementById(modeMap[m])?.classList.add('on');
+  document.getElementById('arrowopts').classList.toggle('show',m==='pass'||m==='run');
+  document.getElementById('hint').textContent=HINTS[m]||'';
+}
+function pickColor(el2){
+  arrowColor=el2.dataset.c;
+  document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));el2.classList.add('on');
+  if(selected?.type==='arrow'){arrows=arrows.map(a=>a.id===selected.id?{...a,color:arrowColor}:a);render();}
+}
+function pickWidth(w,btn){
+  arrowWidth=w;
+  document.getElementById('w-thin').classList.toggle('on',w===2);
+  document.getElementById('w-thick').classList.toggle('on',w===3.5);
+  if(selected?.type==='arrow'){arrows=arrows.map(a=>a.id===selected.id?{...a,w}:a);render();}
+}
+function clearArrows(){arrows=[];selected=null;render();}
+function resetBoard(){
+  players=defaultPlayers.map(p=>({...p}));arrows=[];steps=[];currentStep=null;
+  document.getElementById('tactic-name').value='';
+  selected=null;setMode('drag');renderSteps();render();
+}
+
+// ── PLAYER MODAL ───────────────────────────────────────────────
+function openPlayerModal(id){
+  editingPlayerId=id;
+  const p=players.find(x=>x.id===id);
+  document.getElementById('player-input').value=p?p.label:'';
+  openModal('modal-player');
+  setTimeout(()=>document.getElementById('player-input').focus(),60);
+}
+function commitLabel(){
+  const v=document.getElementById('player-input').value.trim().toUpperCase().slice(0,4);
+  if(editingPlayerId&&v)players=players.map(p=>p.id===editingPlayerId?{...p,label:v}:p);
+  closeModal('modal-player');render();
+}
+document.getElementById('player-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter')commitLabel();if(e.key==='Escape')closeModal('modal-player');});
+
+// ── MODALS ─────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});
+});
+
+// ── SHARE VIA URL ──────────────────────────────────────────────
+function serializeTactic(){
+  const name=document.getElementById('tactic-name').value.trim()||'Namnlös taktik';
+  return btoa(unescape(encodeURIComponent(JSON.stringify({name,players,arrows,steps}))));
+}
+async function openShareModal(){
+  const encoded=serializeTactic();
+  const longUrl=window.location.href.split('?')[0]+'?t='+encoded;
+  const box=document.getElementById('share-url-box');
+  const fb=document.getElementById('copy-feedback');
+  box.textContent='Förkortar länk…';
+  fb.textContent='';
+  openModal('modal-share');
+
+  const name=document.getElementById('tactic-name').value.trim()||'taktik';
+  const alias=name.toLowerCase()
+    .replace(/å/g,'a').replace(/ä/g,'a').replace(/ö/g,'o')
+    .replace(/[^a-z0-9]/g,'').slice(0,20);
+
+  async function tryShorten(useAlias){
+    const base='https://is.gd/create.php?format=simple&url='+encodeURIComponent(longUrl);
+    const apiUrl=useAlias&&alias?base+'&shorturl='+alias:base;
+    const resp=await fetch(apiUrl);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const text=await resp.text();
+    if(!text.startsWith('http'))throw new Error(text);
+    return text.trim();
+  }
+
+  try{
+    let short;
+    try{ short=await tryShorten(true); }
+    catch(e){ short=await tryShorten(false); }
+    box.textContent=short;
+  } catch(e){
+    box.textContent=longUrl;
+    fb.textContent='(Kunde inte förkorta — kopiera hela länken)';
+  }
+}
+function copyShareUrl(){
+  const url=document.getElementById('share-url-box').textContent;
+  const fb=document.getElementById('copy-feedback');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>{fb.textContent='✓ Länk kopierad!';}).catch(()=>fallbackCopy(url,fb));
+  } else fallbackCopy(url,fb);
+}
+function fallbackCopy(text,fb){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');fb.textContent='✓ Länk kopierad!';}
+  catch(e){fb.textContent='Markera texten ovan och kopiera manuellt.';}
+  document.body.removeChild(ta);
+}
+function loadFromUrl(){
+  const t=new URLSearchParams(window.location.search).get('t');
+  if(!t)return false;
+  try{
+    const d=JSON.parse(decodeURIComponent(escape(atob(t))));
+    players=d.players||[];arrows=d.arrows||[];steps=d.steps||[];currentStep=null;
+    document.getElementById('tactic-name').value=d.name||'';
+    render();renderSteps();return true;
+  }catch(e){return false;}
+}
+
+// ── STEPS ──────────────────────────────────────────────────────
+function snapshot(){return{players:players.map(p=>({...p})),arrows:arrows.map(a=>({...a}))};}
+function saveStep(){
+  steps.push({id:'s'+(seq++),num:steps.length+1,desc:`Steg ${steps.length+1}`,snap:snapshot()});
+  currentStep=steps.length-1;renderSteps();
+  setTimeout(()=>{const l=document.getElementById('steps-list');l.scrollTop=l.scrollHeight;},50);
+}
+function updateCurrentStep(){
+  if(currentStep===null||currentStep>=steps.length)return;
+  steps[currentStep].snap=snapshot();renderSteps();
+  const btn=document.getElementById('update-btn');
+  const orig=btn.textContent;
+  btn.textContent='✓ Sparat!';btn.classList.add('playing');
+  setTimeout(()=>{btn.textContent=orig;btn.classList.remove('playing');},1200);
+}
+function loadStep(i){
+  if(i<0||i>=steps.length)return;
+  currentStep=i;
+  players=steps[i].snap.players.map(p=>({...p}));
+  arrows=steps[i].snap.arrows.map(a=>({...a}));
+  render();renderSteps();
+}
+function deleteStep(i){
+  steps.splice(i,1);steps.forEach((s,j)=>s.num=j+1);
+  currentStep=steps.length===0?null:Math.min(currentStep??0,steps.length-1);
+  renderSteps();
+}
+function gotoPrev(){if(currentStep===null)loadStep(steps.length-1);else loadStep(currentStep-1);}
+function gotoNext(){if(currentStep===null)loadStep(0);else loadStep(currentStep+1);}
+function togglePlay(){
+  const btn=document.getElementById('play-btn');
+  if(playTimer){clearInterval(playTimer);playTimer=null;btn.textContent='▶ Spela';btn.classList.remove('playing');return;}
+  if(!steps.length)return;
+  let i=(currentStep===null||currentStep>=steps.length-1)?0:currentStep+1;
+  loadStep(i);btn.textContent='⏹ Stopp';btn.classList.add('playing');
+  playTimer=setInterval(()=>{i++;
+    if(i>=steps.length){clearInterval(playTimer);playTimer=null;btn.textContent='▶ Spela';btn.classList.remove('playing');return;}
+    loadStep(i);},1800);
+}
+function renderSteps(){
+  const list=document.getElementById('steps-list');list.innerHTML='';
+  document.getElementById('update-btn').style.display=currentStep!==null&&steps.length>0?'':'none';
+  if(!steps.length){
+    list.innerHTML='<div style="color:var(--dim);font-size:0.67rem;padding:8px;text-align:center;">Inga steg ännu.<br>Ställ upp planen och<br>tryck "+ Nytt steg".</div>';
+    return;
+  }
+  steps.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.className='step-card'+(currentStep===i?' on':'');
+    card.innerHTML=`
+      <div class="step-top">
+        <span class="step-num">STEG ${s.num}</span>
+        <div class="step-actions">
+          <button class="step-act" onclick="loadStep(${i});event.stopPropagation()">📂</button>
+          <button class="step-act" style="color:#ff6b6b" onclick="deleteStep(${i});event.stopPropagation()">✕</button>
+        </div>
+      </div>
+      <textarea class="step-desc-input" rows="2" placeholder="Beskriv steget…">${s.desc}</textarea>`;
+    card.querySelector('textarea').addEventListener('input',e=>{steps[i].desc=e.target.value;});
+    card.querySelector('textarea').addEventListener('click',e=>e.stopPropagation());
+    card.addEventListener('click',()=>loadStep(i));
+    list.appendChild(card);
+  });
+}
+
+// ── LIBRARY ────────────────────────────────────────────────────
+function loadLib(){try{const d=localStorage.getItem('taktik-lib');if(d)library=JSON.parse(d);}catch(e){}}
+function saveLib(){try{localStorage.setItem('taktik-lib',JSON.stringify(library));}catch(e){}}
+function deepCopySteps(ss){return ss.map(s=>({...s,snap:{players:s.snap.players.map(p=>({...p})),arrows:s.snap.arrows.map(a=>({...a}))}}))}
+
+function openSaveLibModal(){
+  document.getElementById('lib-input').value=document.getElementById('tactic-name').value.trim();
+  document.getElementById('lib-input').dataset.renameId='';
+  openModal('modal-lib');
+  setTimeout(()=>document.getElementById('lib-input').focus(),60);
+}
+function commitSaveLib(){
+  const rid=document.getElementById('lib-input').dataset.renameId;
+  const name=document.getElementById('lib-input').value.trim();
+  if(!name)return;
+  if(rid){library=library.map(t=>t.id===rid?{...t,name}:t);saveLib();renderLib();closeModal('modal-lib');return;}
+  document.getElementById('tactic-name').value=name;
+  const entry={id:'t'+(seq++),name,steps:deepCopySteps(steps),
+    boardPlayers:players.map(p=>({...p})),boardArrows:arrows.map(a=>({...a}))};
+  const idx=library.findIndex(t=>t.name===name);
+  if(idx>=0)library[idx]=entry;else library.push(entry);
+  saveLib();closeModal('modal-lib');renderLib();switchTab('library');
+}
+document.getElementById('lib-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter')commitSaveLib();if(e.key==='Escape')closeModal('modal-lib');});
+
+function loadTactic(id){
+  const t=library.find(x=>x.id===id);if(!t)return;
+  players=t.boardPlayers.map(p=>({...p}));
+  arrows=t.boardArrows.map(a=>({...a}));
+  steps=deepCopySteps(t.steps);
+  currentStep=null;
+  document.getElementById('tactic-name').value=t.name;
+  render();renderSteps();switchTab('steps');
+}
+function deleteTactic(id){
+  confirm2('Radera taktik?','',()=>{library=library.filter(t=>t.id!==id);saveLib();renderLib();});
+}
+function renameTactic(id){
+  const t=library.find(x=>x.id===id);if(!t)return;
+  document.getElementById('lib-input').value=t.name;
+  document.getElementById('lib-input').dataset.renameId=id;
+  openModal('modal-lib');
+  setTimeout(()=>document.getElementById('lib-input').focus(),60);
+}
+function renderLib(){
+  const list=document.getElementById('lib-list');list.innerHTML='';
+  if(!library.length){
+    list.innerHTML='<div style="color:var(--dim);font-size:0.67rem;padding:8px;text-align:center;">Inga sparade taktiker.<br>Tryck "+ SPARA TAKTIK".</div>';
+    return;
+  }
+  library.forEach(t=>{
+    const card=document.createElement('div');card.className='lib-card';
+    card.innerHTML=`
+      <span class="lib-name" onclick="loadTactic('${t.id}')">${t.name}</span>
+      <div class="lib-actions">
+        <button class="lib-btn" onclick="loadTactic('${t.id}')">📂</button>
+        <button class="lib-btn" onclick="renameTactic('${t.id}')">✏️</button>
+        <button class="lib-btn" style="color:#ff6b6b" onclick="deleteTactic('${t.id}')">🗑</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ── EXPORT / IMPORT ────────────────────────────────────────────
+function exportLibrary(){
+  if(!library.length){showIOFeedback('Inget att exportera än.');return;}
+  const json=JSON.stringify({version:1,exported:new Date().toISOString(),library},null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='taktiker.json';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showIOFeedback('✓ Exporterad! Spara filen i iCloud.');
+}
+
+function importLibrary(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.library||!Array.isArray(data.library))throw new Error('Ogiltigt format');
+      const incoming=data.library;
+      // Merge: incoming taktiker som inte finns (by name) läggs till; befintliga frågas
+      let added=0,skipped=0;
+      incoming.forEach(t=>{
+        const exists=library.findIndex(x=>x.name===t.name);
+        if(exists>=0){skipped++;}
+        else{library.push({...t,id:'t'+(seq++)});added++;}
+      });
+      saveLib();renderLib();
+      showIOFeedback(`✓ Importerade ${added} taktiker${skipped>0?' ('+skipped+' redan finns)':''}.`);
+    }catch(err){showIOFeedback('Fel: Kunde inte läsa filen.');}
+  };
+  reader.readAsText(file);
+  event.target.value=''; // reset so same file can be re-imported
+}
+
+function showIOFeedback(msg){
+  const el=document.getElementById('io-feedback');
+  el.textContent=msg;
+  setTimeout(()=>el.textContent='',4000);
+}
+
+// ── CONFIRM ────────────────────────────────────────────────────
+function confirm2(title,msg,onOk){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  const ok=document.getElementById('confirm-ok');
+  ok.onclick=()=>{onOk();closeModal('modal-confirm');};
+  openModal('modal-confirm');
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+function switchTab(t){
+  document.getElementById('tab-steps').classList.toggle('on',t==='steps');
+  document.getElementById('tab-library').classList.toggle('on',t==='library');
+  document.getElementById('steps-pane').classList.toggle('hidden',t!=='steps');
+  document.getElementById('library-pane').classList.toggle('hidden',t!=='library');
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+buildField();
+loadLib();
+if(!loadFromUrl())resetBoard();
+renderLib();
+</script>
+</body>
+</html>
